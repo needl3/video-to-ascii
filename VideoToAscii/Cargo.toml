@@ -1,0 +1,10 @@
+[package]
+name = "rust_projects"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crossterm = "0.26.1"
+fs = "0.0.5"
+image = "0.24.6"
+rscam = "0.5.5"
