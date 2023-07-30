@@ -8,15 +8,14 @@ use std::time::Duration;
 const PIX_BITS: usize = 4;
 
 fn get_ascii(intensity: u8) -> &'static str {
-    let mut ascii = [
-        "#", "B", "A", "C", "(", "g", "a", "v", "r", "i", "+", "=", "*", "^", "-", "_", ",", ".",
-        " ",
+    let ascii = [
+        " ", ".", ",", "_", "-", "^", "*", "=", "+", "i", "r", "v", "a", "g", "(", "C", "A", "B",
+        "#",
     ];
     let map_left = 1;
     let index = intensity
         / ((255 / (ascii.len() as u8 - map_left)) + (255 % (ascii.len() as u8 - map_left)));
 
-    ascii.reverse();
     return ascii[index as usize];
 }
 
@@ -29,7 +28,7 @@ fn draw_ascii_image(image: &DynamicImage) {
         for x in 0..width {
             if y % (scale * 2) == 0 && x % (scale * 2) == 0 {
                 let pix = image.get_pixel(x, y);
-                let intensity = calculate_intensity((&pix[0], &pix[1], &pix[2], &pix[3]));
+                let intensity = calculate_intensity(&(pix[0], pix[1], pix[2], pix[3]));
                 print!("{}", get_ascii(intensity));
             }
         }
@@ -39,7 +38,7 @@ fn draw_ascii_image(image: &DynamicImage) {
     }
 }
 
-fn calculate_intensity(pix: (&u8, &u8, &u8, &u8)) -> u8 {
+fn calculate_intensity(pix: &(u8, u8, u8, u8)) -> u8 {
     // This is avegaging technique
     // return *pix.0/3 + *pix.1/3 + *pix.2/3;
     //
@@ -47,9 +46,9 @@ fn calculate_intensity(pix: (&u8, &u8, &u8, &u8)) -> u8 {
     //
     // This considers physical brightness of colors
     //
-    let gottem = *pix.0 as f32 * *pix.0 as f32 * 0.241
-        + *pix.1 as f32 * *pix.1 as f32 * 0.691
-        + *pix.2 as f32 * *pix.2 as f32 * 0.068;
+    let gottem = pix.0 as f32 * pix.0 as f32 * 0.241
+        + pix.1 as f32 * pix.1 as f32 * 0.691
+        + pix.2 as f32 * pix.2 as f32 * 0.068;
     return gottem.sqrt() as u8;
 }
 
@@ -64,14 +63,14 @@ fn draw_ascii_video(frame: &Frame) {
         let pixel_index = index / PIX_BITS;
         let x = pixel_index as u32 % width;
         if x == 0 {
-            y = (pixel_index as u32 - x) / width;
+            y = pixel_index as u32 / width;
         }
         if y % (scale * 2) == 0 && x % (scale / 2) == 0 {
-            let intensity = calculate_intensity((
-                &frame[index],
-                &frame[index + 1],
-                &frame[index + 2],
-                &frame[index + 3],
+            let intensity = calculate_intensity(&(
+                frame[index],
+                frame[index + 1],
+                frame[index + 2],
+                frame[index + 3],
             ));
             print!("{}", get_ascii(intensity));
         }
