@@ -35,6 +35,8 @@ fn draw_ascii_image(image: &DynamicImage, color: i8) {
 
     let scale = height / 200;
 
+    let mut to_print = String::new();
+
     for y in 0..height {
         for x in 0..width {
             if y % (scale * 2) == 0 && x % (scale * 2) == 0 {
@@ -42,18 +44,15 @@ fn draw_ascii_image(image: &DynamicImage, color: i8) {
                 let intensity = calculate_intensity((&pix[0], &pix[1], &pix[2], &pix[3]));
 
                 if color > 0 {
-                    print!(
-                        "\x1B[38;2;{};{};{};48;2;{};{};{}m{}",
-                        pix[0],
-                        pix[1],
-                        pix[2],
+                    to_print += &format!(
+                        "\x1B[48;2;{};{};{}m{}",
                         pix[0],
                         pix[1],
                         pix[2],
                         get_ascii(intensity)
                     );
                 } else if color > -1 {
-                    print!(
+                    to_print += &format!(
                         "\x1B[38;2;{};{};{}m{}",
                         pix[0],
                         pix[1],
@@ -61,16 +60,17 @@ fn draw_ascii_image(image: &DynamicImage, color: i8) {
                         get_ascii(intensity)
                     );
                 } else {
-                    print!("{}", get_ascii(intensity));
+                    to_print += get_ascii(intensity);
                 }
             }
         }
-        print!("\x1B[38;2;255;255;255;48;2;0;0;0m");
+        to_print += "\x1B[38;2;255;255;255;48;2;0;0;0m";
 
         if y % (scale * 2) == 0 {
-            println!();
+            to_print += "\n";
         }
     }
+    print!("{}", to_print);
 }
 
 fn use_image(source: &String, color: i8) {
@@ -88,6 +88,7 @@ fn draw_ascii_video(frame: &Frame, color: i8) {
 
     let mut index = 0;
     let mut y: u32 = 0;
+    let mut to_print = String::new();
     while index < frame.len() {
         let pixel_index = index / PIX_BITS;
         let x = pixel_index as u32 % width;
@@ -103,18 +104,15 @@ fn draw_ascii_video(frame: &Frame, color: i8) {
             ));
 
             if color > 0 {
-                print!(
-                    "\x1B[38;2;{};{};{};48;2;{};{};{}m{}",
-                    frame[index],
-                    frame[index + 1],
-                    frame[index + 2],
+                to_print += &format!(
+                    "\x1B[48;2;{};{};{}m{}",
                     frame[index],
                     frame[index + 1],
                     frame[index + 2],
                     get_ascii(intensity)
                 );
             } else if color > -1 {
-                print!(
+                to_print += &format!(
                     "\x1B[38;2;{};{};{}m{}",
                     frame[index],
                     frame[index + 1],
@@ -122,15 +120,20 @@ fn draw_ascii_video(frame: &Frame, color: i8) {
                     get_ascii(intensity)
                 );
             } else {
-                print!("{}", get_ascii(intensity));
+                to_print += get_ascii(intensity);
             }
             if x == width - 1 {
-                print!("\x1B[38;2;255;255;255;48;2;0;0;0m");
-                println!();
+                if color > 0 {
+                    to_print += "\x1B[38;2;255;255;255;48;2;0;0;0m";
+                } else if color > -1 {
+                    to_print += "\x1B[38;2;255;255;255m";
+                }
+                to_print += "\n";
             }
         }
         index = index + 4;
     }
+    print!("{}", to_print);
 }
 
 fn use_camera(source: &String, color: i8) {
@@ -216,7 +219,7 @@ fn main() {
             }
             println!("\n\nNOTE: Colored Rendering will be the choppiest");
             thread::sleep(Duration::from_millis(1000));
- 
+
             let option = &args[1];
             match &option[..] {
                 "--video" => use_camera(&args[2], 1),
