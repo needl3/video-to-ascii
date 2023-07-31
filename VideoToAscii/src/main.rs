@@ -41,32 +41,31 @@ fn draw_ascii_image(image: &DynamicImage, color: i8) {
         for x in 0..width {
             if y % (scale * 2) == 0 && x % (scale * 2) == 0 {
                 let pix = image.get_pixel(x, y);
-                let intensity = calculate_intensity((&pix[0], &pix[1], &pix[2], &pix[3]));
-
                 if color > 0 {
-                    to_print += &format!(
-                        "\x1B[48;2;{};{};{}m{}",
-                        pix[0],
-                        pix[1],
-                        pix[2],
-                        get_ascii(intensity)
-                    );
-                } else if color > -1 {
-                    to_print += &format!(
-                        "\x1B[38;2;{};{};{}m{}",
-                        pix[0],
-                        pix[1],
-                        pix[2],
-                        get_ascii(intensity)
-                    );
+                    to_print += &format!("\x1B[48;2;{};{};{}m ", pix[0], pix[1], pix[2],);
                 } else {
-                    to_print += get_ascii(intensity);
+                    let intensity = calculate_intensity((&pix[0], &pix[1], &pix[2], &pix[3]));
+                    if color > -1 {
+                        to_print += &format!(
+                            "\x1B[38;2;{};{};{}m{}",
+                            pix[0],
+                            pix[1],
+                            pix[2],
+                            get_ascii(intensity)
+                        );
+                    } else {
+                        to_print += get_ascii(intensity);
+                    }
                 }
             }
         }
-        to_print += "\x1B[38;2;255;255;255;48;2;0;0;0m";
 
         if y % (scale * 2) == 0 {
+            if color > 0 {
+                to_print += "\x1B[38;2;255;255;255;48;2;0;0;0m";
+            } else if color > -1 {
+                to_print += "\x1B[38;2;255;255;255m";
+            }
             to_print += "\n";
         }
     }
@@ -96,31 +95,32 @@ fn draw_ascii_video(frame: &Frame, color: i8) {
             y = pixel_index as u32 / width;
         }
         if y % (scale * 2) == 0 && x % (scale / 2) == 0 {
-            let intensity = calculate_intensity((
-                &frame[index],
-                &frame[index + 1],
-                &frame[index + 2],
-                &frame[index + 3],
-            ));
-
             if color > 0 {
                 to_print += &format!(
-                    "\x1B[48;2;{};{};{}m{}",
+                    "\x1B[48;2;{};{};{}m ",
                     frame[index],
                     frame[index + 1],
                     frame[index + 2],
-                    get_ascii(intensity)
-                );
-            } else if color > -1 {
-                to_print += &format!(
-                    "\x1B[38;2;{};{};{}m{}",
-                    frame[index],
-                    frame[index + 1],
-                    frame[index + 2],
-                    get_ascii(intensity)
                 );
             } else {
-                to_print += get_ascii(intensity);
+                let intensity = calculate_intensity((
+                    &frame[index],
+                    &frame[index + 1],
+                    &frame[index + 2],
+                    &frame[index + 3],
+                ));
+
+                if color > -1 {
+                    to_print += &format!(
+                        "\x1B[38;2;{};{};{}m{}",
+                        frame[index],
+                        frame[index + 1],
+                        frame[index + 2],
+                        get_ascii(intensity)
+                    );
+                } else {
+                    to_print += get_ascii(intensity);
+                }
             }
             if x == width - 1 {
                 if color > 0 {
@@ -166,7 +166,8 @@ fn use_camera(source: &String, color: i8) {
         };
         print!("\x1B[2J\x1B[1;1H");
         draw_ascii_video(&frame, color);
-        thread::sleep(Duration::from_millis(33));
+        thread::sleep(Duration::from_millis(20)); // Reqd only for --color option because of my
+                                                  // lappy of quantum computing speed
     }
 }
 
